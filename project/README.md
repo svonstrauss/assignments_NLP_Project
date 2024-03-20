@@ -48,7 +48,6 @@ Your project milestone report will be 2 - 3 pages using the provided template in
 
 Compile and push to `report/report.pdf` in your project repo.
 
-You will also provide feedback to one other group under the "Project Milestone" discussion in Canvas.
 
 ### Report
 
