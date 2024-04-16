@@ -69,7 +69,7 @@ You should edit the `README.md` file in the root folder of your project reposito
 
 ### Presentation
 
-A **maximum** ten minute presentation summarizing your project, following a similar template as the report. Use the `docs/` folder of your project to make your slides using Markdown. The slides should be visible at https://tulane-cmps6730.github.io/project-alpha, where `project-alpha` is your project name. The presentations will be done during Exam week.
+A **maximum** five minute presentation summarizing your project, following a similar template as the report. Use the `docs/` folder of your project to make your slides using Markdown. The slides should be visible at https://tulane-cmps6730.github.io/project-alpha, where `project-alpha` is your project name. The presentations will be done during Exam week.
 
 
 ### Grading
