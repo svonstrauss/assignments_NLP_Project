@@ -7,6 +7,7 @@ Project guidelines:
 - The data used should be as raw as possible. E.g., you may not simply download a pre-processed dataset from the UCI repository.
 - The groups may be up to size 2.
 - Sample projects can be found [here](https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1194/project.html) or by reading recent papers published in ACL, the top computational linguistics conference: <https://www.aclweb.org/anthology/volumes/2020.acl-main/>
+- You can find projects from previous years [here](https://github.com/tulane-cmps6730?q=project-&type=all&language=&sort=)
 - You may use existing libraries (e.g., nltk, TensorFlow, theano), but your project should be your own.
 - Any data needed for your project should be downloaded by the `nlp dl-data` command.
 - After the Proposal survey is submitted (see below), a new private repository will be created for your group.
