@@ -1,8 +1,0 @@
-gensim
-numpy
-matplotlib
-pandas
-scipy
-seaborn
-scikit-learn
-torch
