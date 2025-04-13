@@ -1,49 +1,92 @@
-Problem Overview
+# Detecting Health Misinformation: Beyond COVID-19
+
+## Problem Overview
+
 We plan to create a model that detects fake health news, primarily focusing on COVID-19 misinformation yet aiming to see if it generalizes to other misleading health claims. Fake content about cures or treatments can harm public well-being and erode trust in medical advice. By training on an extensive pool of labeled COVID-19 examples, we want to see whether our approach catches broader falsehoods, like bogus home remedies or miracle cures. If successful, this would demonstrate that our system is not simply memorizing pandemic-specific language, but actually learning meaningful patterns of health misinformation.
 
-Data
-We will start with two main COVID-19 fake news datasets: one from Kaggle (the “COVID-19 Fake News Dataset”) and the CoAID collection (combining articles, social media, and user engagement data). Both sets label items as “fake” or “real,” providing a reliable foundation for training. After cleaning and merging these, we will create a smaller test set of non-COVID fake health claims, such as pseudoscientific “cures.” The main challenges include noisy data from social media, class imbalance (often fewer “fake” examples), and ensuring the model doesn’t get stuck on pandemic-only terms.
+## Data
 
-Method
-Our pipeline will begin with standard text preprocessing, including tokenization, lowercasing, and possibly removing stopwords. We will compare a baseline (e.g., a logistic regression or SVM with TF-IDF features) to a more advanced transformer-based classifier like a fine-tuned BERT model. Libraries like scikit-learn and PyTorch will be used for implementation. The key question is whether a deeper model can capture more subtle cues of misinformation and then transfer those insights to novel, non-COVID claims.
+We will start with two main COVID-19 fake news datasets:
 
-Related Work
+1. **COVID-19 Fake News Dataset** (Kaggle): Contains news articles with binary classification (fake/real).
+2. **CoAID Collection**: Integrates articles, social media posts, and user engagement metrics with fake/real labels.
 
-Patwa et al. (2021): They introduced a large-scale COVID-19 fake news dataset and tested classical machine learning models like SVM and logistic regression. Their surprising finding was that simpler models sometimes outperformed more complex ones. This emphasizes the importance of baseline comparisons when studying misinformation.
- 
+Both datasets provide a reliable foundation for training. After cleaning and merging these sources, we will create a smaller test set of non-COVID fake health claims, such as pseudoscientific "cures." 
 
-Cui & Lee (2020): Their CoAID dataset brings together articles, tweets, and user engagement data on COVID-19 misinformation. A unique aspect is capturing how social interactions (likes, shares) correlate with fake news spread. That makes CoAID useful for studying the viral potential of health misinformation.
- 
+**Key Challenges:**
+- Managing noisy data from social media sources
+- Addressing class imbalance (typically fewer "fake" examples)
+- Preventing the model from overfitting to pandemic-specific terminology
 
-Shahi & Nandini (2020): They compiled FakeCovid, a multilingual resource with fact-checked COVID-19 articles from dozens of countries. Unlike others, their focus is on cross-lingual and cross-domain analysis, highlighting how fake news can vary in different cultural settings. Their results showed challenges in detecting false content in multiple languages, but also offered insights into bridging language gaps.
- 
+## Method
 
-Kar et al. (2020): This study tackled multilingual fake tweet detection (in English and Indic languages) using a BERT-based framework. Their work demonstrated that even limited labeled data can be effective with the right pretrained model. It also highlighted that domain-specific features (like user metadata) can further boost detection accuracy.
- 
+Our implementation pipeline includes:
 
-Vijjali et al. (2020): They proposed a two-stage transformer method for detecting and fact-checking COVID-19 fake news. First, relevant facts are retrieved from a knowledge base, and second, the model performs textual entailment to verify claims. It stands out by combining misinformation detection with an automated fact-check step.
-Evaluation
-We will measure accuracy, precision, recall, and F1-score on a held-out portion of the COVID-19 data to gauge in-domain performance. Our baseline will be a simple classifier (e.g., a majority-class predictor or logistic regression) against which we compare the more advanced models. Then, we will apply the trained model to our smaller set of non-COVID health claims. Any significant performance drop here indicates overfitting to COVID-specific language. We will present confusion matrices to clarify where errors occur, and possibly plot ROC or precision-recall curves. If time permits, we may explore limited fine-tuning on out-of-domain examples to see if that improves transferability.
+1. **Text Preprocessing**:
+   - Tokenization and lemmatization
+   - Lowercasing and stopword removal
+   - Special handling for health-specific terminology
 
-References
-COVID-19 Fake News Dataset (Kaggle)
-https://www.kaggle.com/datasets/arashnic/covid19-fake-newsLinks to an external site.
+2. **Modeling Approaches**:
+   - **Baseline**: Classical ML with TF-IDF features
+     - Logistic Regression
+     - Support Vector Machines (SVM)
+   - **Advanced**: Transformer-based approaches
+     - Fine-tuned BERT model
+     - Domain adaptation techniques
 
-CoAID – COVID-19 Healthcare Misinformation Dataset (GitHub)
-https://github.com/cuilimeng/CoAIDLinks to an external site.
+Libraries including scikit-learn and PyTorch will power our implementation. The core research question is whether deeper models can capture subtle misinformation cues that transfer to novel, non-COVID health claims.
 
-Patwa et al. (2021) – “Fighting an Infodemic: COVID-19 Fake News Dataset”
-https://arxiv.org/abs/2011.03327Links to an external site.
+## Related Work
 
-Cui & Lee (2020) – “CoAID: COVID-19 Healthcare Misinformation Dataset”
-https://arxiv.org/abs/2006.00885Links to an external site.
+| Research | Key Contribution | Relation to Our Work |
+|----------|------------------|----------------------|
+| **Patwa et al. (2021)** | Introduced large-scale COVID-19 fake news dataset; found simpler models sometimes outperformed complex ones | Informs our baseline comparison strategy; we extend beyond COVID to test generalization |
+| **Cui & Lee (2020)** | Created CoAID dataset combining articles, tweets, and engagement data | We leverage this dataset while focusing more on linguistic patterns than social metrics |
+| **Shahi & Nandini (2020)** | Compiled multilingual FakeCovid with fact-checked articles | While we focus on English content, their cross-domain insights inform our transfer approach |
+| **Kar et al. (2020)** | Implemented BERT-based detection for English and Indic languages | We adapt similar architecture focusing on domain transfer rather than language transfer |
+| **Vijjali et al. (2020)** | Developed two-stage transformer for both detection and fact-checking | Our preprocessing incorporates health-specific terminology handling; we evaluate cross-domain performance |
 
-Shahi & Nandini (2020) – “FakeCovid: A Multilingual Cross-Domain Fact Check News Dataset for COVID-19”
-https://arxiv.org/abs/2006.11343Links to an external site.
+## Evaluation
 
-Kar et al. (2020) – “No Rumours Please! A Multi-Indic-Lingual Approach for COVID Fake-Tweet Detection”
-https://arxiv.org/abs/2010.06906Links to an external site.
+We will implement a comprehensive evaluation strategy:
 
-Vijjali et al. (2020) – “Two Stage Transformer Model for COVID-19 Fake News Detection and Fact Checking”
-https://arxiv.org/abs/2011.13253Links to an external site.
+1. **In-Domain Performance**:
+   - Accuracy, precision, recall, and F1-score on COVID-19 data
+   - Confusion matrices to identify error patterns
+   - ROC and precision-recall curves
 
+2. **Cross-Domain Evaluation**:
+   - Apply trained models to non-COVID health claims
+   - Measure performance degradation across domains
+   - Analyze error cases to identify domain-specific challenges
+
+3. **Baseline Comparisons**:
+   - Simple majority-class predictor
+   - Traditional ML approaches (logistic regression)
+   - Feature importance analysis
+
+If time permits, we will explore limited fine-tuning on out-of-domain examples to improve transferability and determine the minimum adaptation required for effective cross-domain performance.
+
+## References
+
+1. COVID-19 Fake News Dataset (Kaggle)  
+   https://www.kaggle.com/datasets/arashnic/covid19-fake-news
+
+2. CoAID – COVID-19 Healthcare Misinformation Dataset (GitHub)  
+   https://github.com/cuilimeng/CoAID
+
+3. Patwa et al. (2021) – "Fighting an Infodemic: COVID-19 Fake News Dataset"  
+   https://arxiv.org/abs/2011.03327
+
+4. Cui & Lee (2020) – "CoAID: COVID-19 Healthcare Misinformation Dataset"  
+   https://arxiv.org/abs/2006.00885
+
+5. Shahi & Nandini (2020) – "FakeCovid: A Multilingual Cross-Domain Fact Check News Dataset for COVID-19"  
+   https://arxiv.org/abs/2006.11343
+
+6. Kar et al. (2020) – "No Rumours Please! A Multi-Indic-Lingual Approach for COVID Fake-Tweet Detection"  
+   https://arxiv.org/abs/2010.06906
+
+7. Vijjali et al. (2020) – "Two Stage Transformer Model for COVID-19 Fake News Detection and Fact Checking"  
+   https://arxiv.org/abs/2011.13253
