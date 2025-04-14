@@ -16,12 +16,11 @@ sys.path.append(str(Path(__file__).parent.parent))
 # Import our enhanced modules
 from enhanced_models import HealthMisinformationDetector
 from cross_domain_transfer import CrossDomainTransfer
-# Importing advanced_transformers conditionally as it requires additional dependencies
+# Importing advanced_transformers and checking if transformers are available
 try:
-    from advanced_transformers import TransformerModels
-    TRANSFORMERS_AVAILABLE = True
+    from advanced_transformers import TransformerModels, TRANSFORMERS_AVAILABLE
 except ImportError:
-    print("Warning: transformers package not available. Advanced transformer models will be skipped.")
+    print("Warning: advanced_transformers module not available. Advanced transformer models will be skipped.")
     TRANSFORMERS_AVAILABLE = False
 
 def main():
@@ -31,7 +30,11 @@ def main():
     print("=" * 80)
     
     # Create output directory for visualizations
-    os.makedirs("../visualizations", exist_ok=True)
+    visualizations_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "visualizations")
+    os.makedirs(visualizations_dir, exist_ok=True)
+    
+    # Change working directory to ensure files are saved in the right place
+    os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
     # Step 1: Run traditional models with enhanced visualizations
     print("\n1. Running Traditional Models with Enhanced Visualizations")

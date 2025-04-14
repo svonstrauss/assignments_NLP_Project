@@ -7,15 +7,22 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import torch
-from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score, f1_score
-import transformers
-from transformers import (
-    AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments,
-    pipeline, AutoModelForSeq2SeqLM, AutoModelForCausalLM, get_scheduler
-)
+
+# Try to import transformer-related libraries, but provide fallbacks
+try:
+    import torch
+    from torch.utils.data import Dataset, DataLoader
+    import transformers
+    from transformers import (
+        AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments,
+        pipeline, AutoModelForSeq2SeqLM, AutoModelForCausalLM, get_scheduler
+    )
+    TRANSFORMERS_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Could not import transformer libraries - {str(e)}")
+    TRANSFORMERS_AVAILABLE = False
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -27,47 +34,58 @@ colors = {
     'charts': ['#264653', '#2A9D8F', '#E9C46A', '#F4A261', '#E76F51']      # Sunset palette
 }
 
-class NewsDataset(Dataset):
-    """Dataset for transformer models"""
-    def __init__(self, texts, labels, tokenizer, max_length=512):
-        self.texts = texts
-        self.labels = labels
-        self.tokenizer = tokenizer
-        self.max_length = max_length
+# Only define NewsDataset if transformers is available
+if TRANSFORMERS_AVAILABLE:
+    class NewsDataset(Dataset):
+        """Dataset for transformer models"""
+        def __init__(self, texts, labels, tokenizer, max_length=512):
+            self.texts = texts
+            self.labels = labels
+            self.tokenizer = tokenizer
+            self.max_length = max_length
+            
+        def __len__(self):
+            return len(self.texts)
         
-    def __len__(self):
-        return len(self.texts)
-    
-    def __getitem__(self, idx):
-        text = self.texts[idx]
-        label = 1 if self.labels[idx] == 'fake' else 0
-        
-        encoding = self.tokenizer(
-            text,
-            truncation=True,
-            padding='max_length',
-            max_length=self.max_length,
-            return_tensors='pt'
-        )
-        
-        return {
-            'input_ids': encoding['input_ids'][0],
-            'attention_mask': encoding['attention_mask'][0],
-            'labels': torch.tensor(label, dtype=torch.long)
-        }
+        def __getitem__(self, idx):
+            text = self.texts[idx]
+            label = 1 if self.labels[idx] == 'fake' else 0
+            
+            encoding = self.tokenizer(
+                text,
+                truncation=True,
+                padding='max_length',
+                max_length=self.max_length,
+                return_tensors='pt'
+            )
+            
+            return {
+                'input_ids': encoding['input_ids'][0],
+                'attention_mask': encoding['attention_mask'][0],
+                'labels': torch.tensor(label, dtype=torch.long)
+            }
 
 class TransformerModels:
     """Class for training and evaluating transformer models"""
     
     def __init__(self, device=None):
         """Initialize with device (CPU or GPU)"""
-        self.device = device if device else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        print(f"Using device: {self.device}")
+        if not TRANSFORMERS_AVAILABLE:
+            print("Warning: Transformer models not available. Install transformers package.")
+            self.device = None
+        else:
+            self.device = device if device else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            print(f"Using device: {self.device}")
+        
         self.models = {}
         self.results = {}
         
     def train_bert(self, X_train, y_train, X_test, y_test, model_name='bert-base-uncased', epochs=3, batch_size=8):
         """Train and evaluate a BERT model"""
+        if not TRANSFORMERS_AVAILABLE:
+            print("Error: Transformers package not available. Cannot train BERT model.")
+            return None
+            
         print(f"\nTraining {model_name}...")
         
         # Load tokenizer and model
@@ -152,6 +170,10 @@ class TransformerModels:
     
     def zero_shot_learning(self, texts, model_name="facebook/bart-large-mnli"):
         """Perform zero-shot learning for text classification"""
+        if not TRANSFORMERS_AVAILABLE:
+            print("Error: Transformers package not available. Cannot perform zero-shot learning.")
+            return pd.DataFrame({'text': [], 'predicted': [], 'confidence': []})
+            
         print(f"\nPerforming zero-shot learning with {model_name}...")
         
         # Load model for zero-shot classification
@@ -198,6 +220,10 @@ class TransformerModels:
     
     def few_shot_learning(self, X_train, y_train, X_test, label_examples=5, model_name="google/flan-t5-base"):
         """Demonstrate few-shot learning approach using a text generation model"""
+        if not TRANSFORMERS_AVAILABLE:
+            print("Error: Transformers package not available. Cannot perform few-shot learning.")
+            return pd.DataFrame({'text': [], 'predicted': [], 'full_output': []})
+            
         print(f"\nPerforming few-shot learning with {model_name}...")
         
         # Load tokenizer and model

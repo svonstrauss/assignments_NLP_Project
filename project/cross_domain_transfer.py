@@ -10,8 +10,13 @@ import seaborn as sns
 from sklearn.metrics import classification_report, accuracy_score, f1_score
 from sklearn.model_selection import train_test_split
 import random
-import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+try:
+    import torch
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+    TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    TRANSFORMERS_AVAILABLE = False
+    print("Warning: transformers package not available. Using simulated results only.")
 import warnings
 warnings.filterwarnings('ignore')
 

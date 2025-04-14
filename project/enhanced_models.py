@@ -36,7 +36,12 @@ import plotly.graph_objects as go
 from wordcloud import WordCloud
 
 # Setup visualization
-plt.style.use('seaborn-whitegrid')
+# Use a more modern style that's available in current matplotlib
+try:
+    plt.style.use('seaborn-v0_8-whitegrid')
+except:
+    plt.style.use('seaborn')  # Fallback to basic seaborn style
+
 sns.set(font_scale=1.2)
 plt.rcParams['figure.figsize'] = (12, 8)
 plt.rcParams['font.family'] = 'sans-serif'
