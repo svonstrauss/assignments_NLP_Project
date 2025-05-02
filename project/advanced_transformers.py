@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score, f1_score
+import random
+from nltk.corpus import wordnet
 
 # Try to import transformer-related libraries, but provide fallbacks
 try:
@@ -79,32 +81,58 @@ class TransformerModels:
         
         self.models = {}
         self.results = {}
+
+    def synonym_swap(text, swap_prob=0.15):
+        words = text.split()
+        new_words = []
+        for word in words:
+            if random.random() < swap_prob:
+                synonyms = wordnet.synsets(word)
+                if synonyms:
+                    synonym_words = [lemma.name().replace("_", " ") for lemma in synonyms[0].lemmas() if lemma.name().lower() != word.lower()]
+                    if synonym_words:
+                        new_word = random.choice(synonym_words)
+                        new_words.append(new_word)
+                        continue
+            new_words.append(word)
+        return " ".join(new_words)
         
-    def train_bert(self, X_train, y_train, X_test, y_test, model_name='bert-base-uncased', epochs=3, batch_size=8):
-        """Train and evaluate a BERT model"""
+    def train_bert(self, X_train, y_train, X_test, y_test, model_name='bert-base-uncased', epochs=3, batch_size=8, check_leakage=True, fuzzy_threshold=0.9, augment=True):
+        """Train and evaluate a BERT model with data leakage checking and optional synonym swapping"""
         if not TRANSFORMERS_AVAILABLE:
             print("Error: Transformers package not available. Cannot train BERT model.")
             return None
-            
+
         print(f"\nTraining {model_name}...")
-        
-        # Load tokenizer and model
+
+        # Optional Data Leakage Check
+        if check_leakage:
+            from difflib import SequenceMatcher
+            leak_count = 0
+            for val_text in X_test:
+                for train_text in X_train:
+                    sim = SequenceMatcher(None, val_text.strip().lower(), train_text.strip().lower()).ratio()
+                    if sim >= fuzzy_threshold:
+                        leak_count += 1
+                        break
+            if leak_count > 0:
+                print(f"WARNING: Detected {leak_count} potential duplicate or near-duplicate samples between training and validation!")
+
+        # Apply synonym swap augmentation
+        if augment:
+            X_train = [synonym_swap(text) for text in X_train]
+
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForSequenceClassification.from_pretrained(
-            model_name, 
-            num_labels=2
-        ).to(self.device)
-        
-        # Create datasets
+        model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2).to(self.device)
+
         train_dataset = NewsDataset(X_train, y_train, tokenizer)
         test_dataset = NewsDataset(X_test, y_test, tokenizer)
-        
-        # Define training arguments
+
         training_args = TrainingArguments(
             output_dir=f'./results/{model_name.split("/")[-1]}',
             num_train_epochs=epochs,
             per_device_train_batch_size=batch_size,
-            per_device_eval_batch_size=batch_size*2,
+            per_device_eval_batch_size=batch_size * 2,
             warmup_steps=500,
             weight_decay=0.01,
             logging_dir='./logs',
@@ -114,16 +142,14 @@ class TransformerModels:
             load_best_model_at_end=True,
             metric_for_best_model="accuracy",
         )
-        
-        # Define compute metrics function
+
         def compute_metrics(pred):
             labels = pred.label_ids
             preds = pred.predictions.argmax(-1)
             accuracy = accuracy_score(labels, preds)
             f1 = f1_score(labels, preds, average='weighted')
             return {'accuracy': accuracy, 'f1': f1}
-        
-        # Initialize Trainer
+
         trainer = Trainer(
             model=model,
             args=training_args,
@@ -131,40 +157,33 @@ class TransformerModels:
             eval_dataset=test_dataset,
             compute_metrics=compute_metrics,
         )
-        
-        # Train model
+
         trainer.train()
-        
-        # Evaluate model
         eval_results = trainer.evaluate()
-        
-        # Get predictions
         test_predictions = trainer.predict(test_dataset)
         y_pred = test_predictions.predictions.argmax(-1)
         y_pred_labels = ['fake' if pred == 1 else 'real' for pred in y_pred]
-        
-        # Calculate metrics
+
         report = classification_report(y_test, y_pred_labels, output_dict=True)
         accuracy = accuracy_score(y_test, y_pred_labels)
-        
-        # Save model and results
+
         model_key = model_name.split('/')[-1]
         self.models[model_key] = {
             'model': model,
             'tokenizer': tokenizer,
             'trainer': trainer
         }
-        
+
         self.results[model_key] = {
             'name': model_name.split('/')[-1].upper(),
             'accuracy': accuracy,
             'report': report,
             'y_pred': y_pred_labels,
-            'y_prob': None,  # Would need additional code to extract probabilities
+            'y_prob': None,
             'eval_results': eval_results,
             'color': colors['charts'][0]
         }
-        
+
         print(f"{model_name} Accuracy: {accuracy:.4f}")
         return self.results[model_key]
     
