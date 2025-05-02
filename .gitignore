@@ -132,3 +132,5 @@ dmypy.json
 CLAUDE.md
 python_setup_instructions.md
 fix_python.sh
+
+**/.claude/settings.local.json

@@ -324,11 +324,100 @@ class HealthMisinformationDetector:
         
         return feature_importance.head(30)  # Return top 30 features
     
+    def check_suspicious_performance(self, accuracy_threshold=0.95, f1_threshold=0.95):
+        """
+        Check for suspiciously high scores that might indicate data leakage.
+        
+        Args:
+            accuracy_threshold: Threshold above which accuracy is suspicious
+            f1_threshold: Threshold above which F1 score is suspicious
+        
+        Returns:
+            List of models with suspiciously high scores and leakage check results
+        """
+        if not self.model_results:
+            print("No models trained yet. Please check performance after training.")
+            return []
+        
+        suspicious_models = []
+        
+        for model_key, results in self.model_results.items():
+            # Check for high accuracy
+            if results['accuracy'] > accuracy_threshold:
+                suspicious = True
+                warnings = [f"Suspiciously high accuracy: {results['accuracy']:.4f}"]
+                
+                # Check F1 scores
+                if 'fake' in results['report'] and results['report']['fake']['f1-score'] > f1_threshold:
+                    warnings.append(f"Suspiciously high F1 score for fake class: {results['report']['fake']['f1-score']:.4f}")
+                
+                # Check precision and recall balance
+                if 'fake' in results['report']:
+                    prec = results['report']['fake']['precision']
+                    rec = results['report']['fake']['recall']
+                    if prec > f1_threshold and rec > f1_threshold:
+                        warnings.append(f"Both precision ({prec:.4f}) and recall ({rec:.4f}) are very high")
+                
+                suspicious_models.append({
+                    'model': model_key,
+                    'warnings': warnings,
+                    'results': results
+                })
+        
+        # If we found suspicious models, run data leakage checks
+        if suspicious_models and hasattr(self, 'X_train') and hasattr(self, 'X_test'):
+            print("\n⚠️ SUSPICIOUS PERFORMANCE DETECTED - CHECKING FOR DATA LEAKAGE")
+            
+            # Import leakage detection function
+            try:
+                from difflib import SequenceMatcher
+                
+                leak_count = 0
+                leak_threshold = 0.85  # Lower than default to catch more potential leaks
+                
+                for val_idx, val_text in enumerate(self.X_test):
+                    for train_idx, train_text in enumerate(self.X_train):
+                        sim = SequenceMatcher(None, val_text, train_text).ratio()
+                        if sim >= leak_threshold:
+                            leak_count += 1
+                            print(f"\nPossible data leakage detected (similarity: {sim:.4f}):")
+                            print(f"  Train sample: {train_text[:100]}...")
+                            print(f"  Test sample: {val_text[:100]}...")
+                            
+                            if leak_count >= 5:  # Limit examples to prevent overwhelming output
+                                print(f"\nFound {leak_count} potential leaks, stopping search.")
+                                break
+                    if leak_count >= 5:
+                        break
+                
+                print(f"\nData leakage check complete. Found {leak_count} potential leaks.")
+                for model in suspicious_models:
+                    model['warnings'].append(f"Found {leak_count} potential data leaks between train and test sets")
+            
+            except Exception as e:
+                print(f"Error checking for data leakage: {str(e)}")
+        
+        return suspicious_models
+
     def visualize_results(self):
         """Create beautiful visualizations of model results"""
         if not self.model_results:
             print("No models trained yet. Please train models first.")
             return
+        
+        # Check for suspicious performance
+        suspicious_models = self.check_suspicious_performance()
+        if suspicious_models:
+            print("\n⚠️ WARNING: Some models show suspiciously high performance!")
+            print("This might indicate data leakage or overfitting.")
+            for model in suspicious_models:
+                print(f"\n  Model: {model['model']}")
+                for warning in model['warnings']:
+                    print(f"  - {warning}")
+            print("\nConsider:")
+            print("1. Using a more strict train/test split (e.g., by source or time period)")
+            print("2. Checking for duplicate or near-duplicate examples")
+            print("3. Reporting performance on a fully independent dataset")
         
         # 1. Model Performance Comparison
         self._plot_model_comparison()
